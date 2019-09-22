@@ -1,0 +1,169 @@
+ * {
+   margin: 0;
+   padding: 0;
+   text-decoration: none;
+}
+
+ html, body {
+	margin:0;
+	padding: 0;
+  overflow-x: hidden; 
+  background-color: #000000;
+ }
+
+
+ul {
+  display: inline-block;
+  float: left;
+  list-style-type: none;
+  margin: 0px;
+  padding: 0px;
+  /*background-color: rgb(0, 0, 0);*/
+  width: 100%;
+  /*opacity: 0.7;*/
+  text-align: center;
+  height: 44px;
+}
+
+li {
+  display: flex;
+  float: left;
+  text-align: center;
+  height: 100%;
+  position: relative;
+  overflow: hidden;
+}
+
+
+li a{
+  z-index: 1;
+  display: flex;
+  float: left;
+  text-align: center;
+  height: 100%;
+  position: relative;
+  overflow: auto;
+}
+
+#nav_bar_opacity{
+  opacity: 0.6;
+  position: absolute;
+  height: 100%;
+  width: 100%;
+  z-index: 0;
+  background-color: rgb(0, 0, 0);
+}
+
+#banner_cont{
+  width: 100%;
+  display: inline-block;
+  overflow: auto;
+  vertical-align: top;
+  display: flex;
+  z-index: 0;
+  height: 356px;
+}
+
+#banner_text{
+  display: block;
+  text-align: center;
+  font-weight: 200;
+  font-size: 60px;
+  color: white;
+  text-decoration: none;
+  margin: auto; 
+  font-family: 'Caveat Brush', cursive;
+}
+
+.list_text{
+  display: inline-block;
+  color: white;
+  padding-left: 20px;
+  padding-right: 20px;
+  text-decoration: none;
+  font-family: 'Poiret One', cursive;
+  font-size: 18px;
+  margin: auto; 
+  text-align: center;
+  color: rgba(256, 256, 256, 1);
+  opacity: 1;
+}
+
+li a:hover {
+  /*background-color: rgba(78, 78, 78, 0.8);*/
+  background-color: #0F3654;
+  opacity: 0.8;
+  z-index: 0;
+}
+
+#ig {
+  display: inline-block;
+  float: right;
+  width: 35px;
+  height: 35px;
+  padding: 6px;
+  z-index: 1;
+  position: relative;
+}
+
+#ig:hover{
+  opacity: 0.6;
+}
+
+.fa-instagram {
+    color: #FFFFFF;
+    opacity: 0.8;
+  }
+
+#nav_bar_center_wrapper{
+	display: inline-block;
+  text-align: center;
+  height: 100%;
+
+}
+
+#nav_bar_wrapper{
+  display: inline-block;
+  z-index: 1;
+}
+
+.sticky {
+  margin: 0;
+  display: inline-block;
+  position: fixed;
+  z-index: 1;
+  top: 0px;
+  width: 100%;
+}
+
+.sticky + #content {
+  padding-top: 102px;
+}
+
+#banner_wrapper{ 
+  padding: 0px;
+  margin: 0px;
+  height: 400px;
+  background-image: url("img/P1050046.JPG");
+  opacity: 0.8;
+  width: 100%;
+  background-size: cover;
+  display: flex;
+  position: relative;
+  background-repeat: no-repeat fixed;
+  overflow: hidden;
+}
+
+#logo{
+  size: 50 50;
+}
+
+.stick{
+    display: inline-block;
+    width: 100%;
+    margin: 0;
+    padding: 0px;
+    bottom: 0px;
+    position: absolute;
+    z-index: 1;
+}
