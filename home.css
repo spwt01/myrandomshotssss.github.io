@@ -6,16 +6,12 @@
 
 
 #content{
-  display: block;
+  overflow: hidden;
+  position: relative;
+  margin: auto;
+  display: inline-block;
+  height: auto;
   width: 100%;
-  background-color: #FFFFFF;
-  padding-top: 50px;
-  padding-right: 50px;
-  padding-bottom: 50px;
-  padding-left: 50px;
-  position: absolute;
-  z-index: -1;
-  box-sizing: border-box;
 }
 
 .grid_wrapper{
@@ -25,6 +21,8 @@
   grid-gap: 10px;
   position: relative;
   overflow: auto;
+  margin-left: 50px;
+  margin-top: 50px;
 }
 
 .grid_cont{
@@ -39,7 +37,7 @@
 
 #square0{
 
-  background-image: url("img/P1050189.JPG");
+  background-image: url("./img/P1050189.jpg");
   background-size: 280px 280px;
 
  }
