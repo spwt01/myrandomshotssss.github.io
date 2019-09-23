@@ -40,7 +40,7 @@ li a{
   overflow: auto;
 }
 
-#nav_bar_opacity{
+.opacity{
   opacity: 0.6;
   position: absolute;
   height: 100%;
@@ -87,8 +87,9 @@ li a{
 
 li a:hover {
   /*background-color: rgba(78, 78, 78, 0.8);*/
-  background-color: #0F3654;
-  opacity: 0.8;
+ /* background-color: #0F3654;*/
+ 
+  background-color: rgba(15, 54, 84, 0.8);
   z-index: 0;
 }
 
