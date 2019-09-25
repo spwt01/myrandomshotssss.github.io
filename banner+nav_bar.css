@@ -142,7 +142,6 @@ li a:hover {
   background-image: url("img/P1050046.JPG");
   /*opacity: 0.8;*/
   width: 100%;
-  max-width: 1440px;
   background-size: cover;
   display: block;
   position: relative;
