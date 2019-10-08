@@ -1,4 +1,4 @@
- * {
+* {
    margin: 0;
    padding: 0;
    text-decoration: none;
@@ -88,7 +88,7 @@ li a:hover {
   /*background-color: rgba(78, 78, 78, 0.8);*/
  /* background-color: #0F3654;*/
  
-  background-color: rgba(15, 54, 84, 0.8);
+  background-color: rgba(15, 54, 84, 0.6);
   z-index: 0;
 }
 
@@ -112,7 +112,7 @@ li a:hover {
   }
 
 #nav_bar_center_wrapper{
-	display: inline-block;
+  display: inline-block;
   text-align: center;
   height: 100%;
 }
