@@ -1,145 +1,726 @@
 <!DOCTYPE html>
-<html>
 <head>
-
-<meta charset='utf-8'>
-<link rel="stylesheet" type="text/css" href="home.css">
-<link rel="stylesheet" type="text/css" href="banner+nav_bar.css">
-<link href="https://fonts.googleapis.com/css?family=Anton|Poiret+One|Caveat+Brush|&display=swap" rel="stylesheet">
-
+<meta charset="utf-8">
+<title>Timed Moving Bubbles</title>
+<link rel="stylesheet" href="style/style.css" type="text/css" media="screen" />
 </head>
 
+<div id="main-wrapper">
+
+	
+	<div id="sidebar">
+<div id="current_date">date</div>
+<div id="current_time">time</div>
+<div id="speed">
+<div class="togglebutton pause" data-val="pause">Pause</div>
+<div class="togglebutton medium current" data-val="medium">Slow</div>
+<div class="togglebutton fast" data-val="fast">Fast</div>
+<div class="clr"></div>
+</div>
+<div id="note"></div>
+</div>
+	
+    <div id="chart"></div>
 
 
-<body>
+</div><!-- @end #main-wrapper -->
 
-<!--<link href="banner+nav_bar.html" rel="import" />-->
 
-	<div id="banner_wrapper">
+<script src="js/d3-3-5-5.min.js"></script>
+
+
+<script>
+const people = {};
+var USER_SPEED = "medium";
+
+//var speeds = { "slow": 1200, "medium": 400, "fast": 100 };
+var speeds = { "slow": 1200, "medium": 400, "fast": 10 };
+var simtimer;
+
+var curr_date;
+
+var margin = {top: 70, right: 60, bottom: 70, left: 60};
+margin.left = margin.right = width < 500 ? 30 : 70;
+var width = parseInt(d3.select("#chart").style('width'), 10) - margin.left - margin.right,
+    height = 670 - margin.top - margin.bottom,
+	padding = 2,
+    maxRadius = width < 500 ? 2 : 4;
+
+	// color = d3.scale.category10();
+
+var x = d3.scale.linear()
+    .domain([1, 3])
+    .range([0, width]);
+	
+var y = d3.scale.linear()
+    .domain([1, 4])
+    .range([0, height]);
+	
+var	sched_objs = {},
+// var sched_objs = [],
+	curr_minute = 0;
+
+const svg = d3.select("#chart").append("svg")
+    .attr("width", width + margin.left + margin.right)
+    .attr("height", height + margin.top + margin.bottom)
+    .append("g")
+    .attr("transform", "translate(" + margin.left + "," + margin.top + ")");
+
+d3.select("#chart").style("width", (width+margin.left+margin.right)+"px");
+
+
+
+// Legends
+
+ svg.append("circle")
+	.attr("cx", 50)
+	.attr("cy", -30)
+	.attr("r", 10)
+	.attr("fill", "#FF839A");
+	
+	
+	svg.append("text")
+		.attr("x", 65)
+		.attr("y", -25)
+		.text(": Elite")
+		.attr("font-family", "sans-serif")
+		.attr("font-size", "15px");
 		
-		<a href="index.html" id="banner_cont">
-			<span id="banner_text">
-				<img src="img/71922075-photo-camera-icon-vector-illustration-style-is-flat-iconic-symbol-black-color-transparent-background.jpg" id="logo" width="50" height="50"> 
-				MY
-				<p>RANDOM</p>
-				<p>SHOTS</p>
-				<p>myrandomshots.pk</p>
-			</span>
-		</a>
+ svg.append("circle")
+	.attr("cx", 150)
+	.attr("cy", -30)
+	.attr("r", 10)
+	.attr("fill", "#83FFEE");
+	
+	
+	svg.append("text")
+		.attr("x", 165)
+		.attr("y", -25)
+		.text(": Member")
+		.attr("font-family", "sans-serif")
+		.attr("font-size", "15px");
+		
+svg.append("circle")
+	.attr("cx", 280)
+	.attr("cy", -30)
+	.attr("r", 10)
+	.attr("fill", "#FDFF83");
+	
+	
+	svg.append("text")
+		.attr("x", 295)
+		.attr("y", -25)
+		.text(": Eshopper")
+		.attr("font-family", "sans-serif")
+		.attr("font-size", "15px");
+		
+svg.append("circle")
+	.attr("cx", 400)
+	.attr("cy", -30)
+	.attr("r", 10)
+	.attr("fill", "#ECECEC");
+	
+	
+	svg.append("text")
+		.attr("x", 415)
+		.attr("y", -25)
+		.text(": Anonymous")
+		.attr("font-family", "sans-serif")
+		.attr("font-size", "15px");
+
+		
+//Append circle 
+
+
+
+const groups = {
+	
+	"Homepage": { x: 20, y: 60, cnt: 0, fullname: "Homepage" },
+	"Product": { x: 20, y: 450, cnt: 0, fullname: "Product" },
+	"Other": { x: 300, y: 550, cnt: 0, fullname: "Other" },
+	"Category": { x: 20, y: 250, cnt: 0, fullname: "Category" },
+	"BlogContent": { x: 620, y: 190, cnt: 0, fullname: "Blog Content" },
+	"Cart": { x: 200, y: 400, cnt: 0, fullname: "Cart" },
+	"Checkout": { x: 380, y: 400, cnt: 0, fullname: "Checkout" },
+	"Loyalty": { x: 600, y: 60, cnt: 0, fullname: "Loyalty" },
+	"MyAccount": { x: 380, y: 40, cnt: 0, fullname: "My Account" },
+	"Register": { x: 200, y: 60, cnt: 0, fullname: "Register" },
+	"SearchResult": { x: 300, y: 220, cnt: 0, fullname: "Search Result" },
+	"Left" : { x: 400, y: 2000, cnt: 0, fullname: "Left" },
+	"NULL" : { x: 600, y: 400, cnt: 0, fullname: "Order Placed" }
+	
+};
+
+const member_tiers = {
+
+	"Elite": { color: "FF839A" },
+	"anonymous": { color: "#ECECEC" },
+	"Member": {color: "#83FFEE"},
+	"eshopper": {color: "#FDFF83"}
+
+};
+
+
+
+// Load data.
+
+
+//d3.csv("data/Page_Duration.csv", function(error, data) {	
+
+d3.csv("data/new_dataset.csv", function(error, data) {	
+
+
+
+/*	data.forEach(function(d) {
+	
+		var activities = [];
+		console.log(d)
+		console.log(d.pagetype)
+		activities.push({'act': d.pagetype, 'duration': d.page_duration, 'tier': d.member_tier});
+		sched_objs.push(activities);
+	}); */
+	console.log(data)
+	var count = 0;
 	
 
-		<div id="nav_bar_wrapper" class="stick">
-			<div id="nav_bar_opacity" class="opacity"></div>
-			<ul>
-				<div id="nav_bar_center_wrapper">
+	
+	data.forEach(d => {
+//	console.log(d)
+//	count+=1;
+		if (d3.keys(sched_objs).includes(d.sessionid)) {
+//        if (d3.keys(sched_objs).includes(d.userid+"")) {
+//		console.log(d.userid)
+//            sched_objs[d.userid+""].push({'userid': d.userid, 'act': d.pagetype, 'duration': d.page_duration, 'member_tier': d.member_tier, 'start_time': d.start_time});
+			sched_objs[d.sessionid+""].push({'userid': d.sessionid, 'act': d.pagetype, 'duration': d.page_duration, 'member_tier': d.member_tier, 'start_time': d.tstamp});
+        } else {
+//            sched_objs[d.userid+""] = [{'userid': d.userid, 'act': d.pagetype, 'duration': d.page_duration, 'member_tier': d.member_tier, 'start_time': d.start_time}];
+			sched_objs[d.sessionid+""] = [{'userid': d.sessionid, 'act': d.pagetype, 'duration': d.page_duration, 'member_tier': d.member_tier, 'start_time': d.tstamp}];
+        }
+    });
+	
+
+	console.log(sched_objs)
+
+/*	var nodes = sched_objs.map(function(o,i) {
+//		console.log("test");
+		console.log(o[0].userid,o[0].start_time, o[0].duration);
+	
+		var act = o[0].act;
+		var init_time = o[0].start_time;
+	
+		var init_x = groups[act].x + Math.random();
+		var init_y = groups[act].y + Math.random();
+		var col = member_tiers[o[0].member_tier].color;
+
+	//	groups[act].cnt += 1;
+		
+		return {
+			userid: o[0].userid,
+			act: act,
+			radius: maxRadius,
+			x: init_x,
+			y: init_y,
+			color: col, //color(act),
+			moves: 0,
+			next_move_time: parseInt(o[0].duration),
+			sched: o,		
+			stroke: "black",
+			start_time: init_time
+		}
+	});*/
+	
+	var nodes = [];
+	
+	console.log(Object.keys(sched_objs).length)
+	
+	for (var k in sched_objs){
+//		console.log(k)
+//		console.log("test");
+		d = sched_objs[k];
+//		console.log(d[0].userid,d[0].start_time, d[0].duration);
+//		console.log(d)
+	
+		var act = d[0].act;
+		var init_time = d[0].start_time;
+	
+		var init_x = groups[act].x + Math.random();
+		var init_y = groups[act].y + Math.random();
+		var col = member_tiers[d[0].member_tier].color;
+
+	//	groups[act].cnt += 1;
+		
+		nodes.push({
+			userid: d[0].userid,
+			act: act,
+			radius: maxRadius,
+			x: init_x,
+			y: init_y,
+			color: col, //color(act),
+			moves: 0,
+			next_move_time: parseInt(d[0].duration),
+			sched: d,		
+			stroke: "blue",
+			start_time: init_time,
+			leave: 0
+		})
+	
+	}
+	
+	console.log(nodes);
+	
+	var curr_nodes = [];
+
+
+//	console.log(data)
+	nodes.forEach(d => {
+//		console.log(d.sched[0].start_time)
+//		console.log(data[0].tstamp)
+      if (d.sched[0].start_time == data[0].tstamp) {
+			d.stroke = "green";
+			if (d.act == "Other")
+			{
+			//console.log(d.sched[1])
+				try{d.act = d.sched[1].act}
+				catch(err){}
+			}
+			curr_nodes.push(d);
+			groups[d.act].cnt += 1;
+        } 
+    });
+	
+	
+//	curr_nodes = nodes.filter(function(d){ return d.sched[0].start_time == data[0].start_time } );
+//	curr_nodes = nodes.filter(function(d){ return d.sched[0].start_time == data[0].tstamp } );
+/*	curr_nodes.forEach(d => {
+		groups[d.act].cnt += 1;
+	}
+	);*/
+	
+	
+	//curr_nodes = nodes.filter(d => d.sched[0].start_time == data[0].start_time);
+//	console.log(nodes.length)
+//	curr_nodes = nodes
+
+	console.log(curr_nodes)
+	
+	
+	var force = d3.layout.force()
+		.nodes(curr_nodes)
+		// .links([])
+		.size([width, height])
+		.gravity(0)
+		.charge(0)
+		.friction(.8)
+		.on("tick", tick)
+		.start();
+
+	var circle = svg.selectAll(".node")
+		.data(curr_nodes)
+	  .enter().append("circle")
+		.attr("r", function(d) { return d.radius; })
+		.style("fill", function(d) { return d.color; })
+		.style("stroke", function(d) { return d.stroke; });
+		// .call(force.drag); 
+
 					
-					  <li><a href="index.html">
-					  	<span class="list_text">Home</span>
-					  </a></li>
-					  <li><a href="#news">
-					  	<span class="list_text">News</span>
-					  </a></li>
-					  <li><a href="#contact">
-					  	<span class="list_text">Contact Me</span>
-					  </a></li>
-					  <li><a href="#about">
-					  	<span class="list_text">About</span>
-					  </a></li>
-					  <li><a href="#help" >
-					  	<span class="list_text">Help this poor jj🥺 </span>
-					  </a></li>
-
-				</div>
-					<a href="https://www.instagram.com/myrandomshotssss/" >
-			 			<i class="fab fa-instagram fa-2x" id="ig"></i>
-			  		</a>
-			</ul>
-		</div>
-	</div>
+		
 
 
+	
+	// Activity group labels
+ /*   var actlabel = svg.selectAll("text")
+        .data(d3.keys(groups))
+      .enter().append("text")
+        .attr("class", "actlabel")
+        .attr("text-anchor", "middle")
+          .attr("x", d => groups[d].x)
+          .attr("y", d => groups[d].y)
+		.attr("dy", "-1.8em")
+        .text(d => groups[d].fullname);*/
+		
+		var actlabel = svg.selectAll('.actlabel')
+      .data(d3.keys(groups))
+	        .enter().append("g")
+          .attr("class", "actlabel")
+	
 
 
-
-  <div id="content">
-  	<div class="grid_wrapper">
-	  	<div id="square0" class="grid_cont">
-	  		<a href="#kt" id="square0_cont"><span class="square_text">KWUN TONG</span></a>
-	  	</div>
-	  	<div id="square1" class="grid_cont"><p id="update">To be updated...</p></div>
-	  	<div id="square1" class="grid_cont"><p id="update">To be updated...</p></div>
-	  	<div id="square1" class="grid_cont"><p id="update">To be updated...</p></div>
-	  	<div id="square1" class="grid_cont"><p id="update">To be updated...</p></div>
-	  	<div id="square1" class="grid_cont"><p id="update">To be updated...</p></div>
-	  	<div id="square0" class="grid_cont">
-	  		<a href="#kt" id="square0_cont"><span class="square_text">KWUN TONG</span></a>
-	  	</div>
-	  	<div id="square0" class="grid_cont">
-	  		<a href="#kt" id="square0_cont"><span class="square_text">KWUN TONG</span></a>
-	  	</div>
-	  	<div id="square0" class="grid_cont">
-	  		<a href="#kt" id="square0_cont"><span class="square_text">KWUN TONG</span></a>
-	  	</div>
-	  	<div id="square0" class="grid_cont">
-	  		<a href="#kt" id="square0_cont"><span class="square_text">KWUN TONG</span></a>
-	  	</div>
-	  </div>
-
-  	
-	  <p>test</p>
-	  <p>test</p>
-	  <p>test</p>
-	  <p>test</p>
-	  <p>test</p>
-	  <h1> 💩</h1>
-	  <p>test</p>
-	  <p>test</p>
-	  <p>test</p>
-	  <p>test</p>
-	  <p>test</p>
-	  <p>test</p>
-	  <p>test</p>
-	  <p>test</p>
-	  <p>test</p>
-	  <p>test</p>
-	  <p>test</p>
-	  <p>test</p>
-	  <p>test</p>
-	  <p>test</p>
-	  <p>test</p>
-	  <p>test</p>
-	  <p>test</p>
-	  <p>test</p>
-	  <p>test</p>
-	  <p>test</p>
-	  <p>test</p>
-	  <p>test</p>
-	  <p>test</p>
-	  <p>test</p>
-	  <p>test</p>
-	  <p>test</p>
-	  <p>test</p>
-	  <p>test</p>
-	  <p>test</p>
-	  <p>test</p>
-	  <p>test</p>
-	  <p>test</p>
-	  <p>test</p>
-	  <p>test</p>
-	  <p>test</p>
-	  <p>test</p>
-	  <p>test</p>
-	  <p>test</p>
-	  <p>test</p>
-	  <p>test</p>
-	  <p>test</p>
-	</div>
-</body>
-
-<script src="https://kit.fontawesome.com/8ca4677f8d.js"></script>
-<script src="/scripts/sticky_bar.js"></script>
-<script src="https://www.gstatic.com/firebasejs/6.6.2/firebase-app.js"></script>
-<script src="/scripts/firebase.js"></script>
+		  
+		  actlabel.append("text")
+		  .attr("class", "actlabel")
+          .attr("text-anchor", "middle")
+		  .attr("x", d => groups[d].x)
+          .attr("y", d => groups[d].y+20)
+		  	.attr("dy", "-1.8em")
+			.style("fill", "Black")
+			.style("font-weight", "bold")
+          .text(d => groups[d].fullname);
+	
+	// Count labels
+	var cntlabel = svg.selectAll('.cntlabel')
+      .data(d3.keys(groups))
+	        .enter().append("g")
+          .attr("class", "cntlabel")
 
 
-</html>
+		  
+		  cntlabel.append("text")
+		  .attr("class", "cnt")
+          .attr("text-anchor", "middle")
+		  .attr("x", d => groups[d].x)
+          .attr("y", d => groups[d].y+20)
+//          .attr("y", d => groups[d].y-10)
+			.style("fill", "Black")
+			.style("font-weight", "bold")
+          .text(d => groups[d].cnt);
+		  
+//		  console.log(data[0])
+		  
+//		  sts_time = String(data[0].session_start_time.split(" ")[0])
+//		  console.log(sts_time.split(" ")[0])
+//		  console.log(data[0].session_start_time.split(" ")[0])
+		  // Initial Date Time
+//		  	d3.select("#current_date").text(data[0].start_time.split(" ")[0]);
+
+		curr_date = data[0].tstamp.split(" ")[0];
+
+		console.log(data[0])
+		console.log(data[0].tstamp)
+		d3.select("#current_date").text(curr_date);
+		console.log("test")
+
+
+	
+		// Update nodes based on activity and duration
+	function timer() {
+	
+		
+
+		d3.range(curr_nodes.length).map(function(i) {
+            // var curr_node = nodes[i],
+                // curr_moves = nodes[i].moves;
+		
+		nodes.forEach(d => {
+//		console.log(d)
+//		console.log(d.sched[0].start_time)
+			start_h = get_currDateTime(d.sched[0].start_time)[3];
+			start_m = get_currDateTime(d.sched[0].start_time)[4];
+			curr_h = minutesToTime(curr_minute)[1];
+			curr_m = minutesToTime(curr_minute)[2];
+//		console.log(start_h,start_m, minutesToTime(curr_minute))
+		  if (start_h == curr_h && start_m == curr_m) {
+//			console.log(start_h,curr_h)
+//			console.log(d)
+		  	if(!curr_nodes.some(e => e.userid == d.userid)) {
+	
+				console.log(curr_nodes);
+				console.log("new node");
+				console.log(d);
+//				console.log(curr_nodes);
+				d.stroke = "green";
+				d.next_move_time += curr_minute;
+				curr_nodes.push(d);
+//				n2 = d;
+//				n3 = n1.push(n2);
+				groups[d.act].cnt += 1;
+				
+				console.log(curr_nodes);
+				
+//				force.nodes().push(d);
+
+			
+			svg.selectAll("circle").remove();
+				
+			circle = svg.selectAll(".node")
+					.data(curr_nodes)
+					.enter().append("circle")
+					.attr("r", function(d) { return d.radius; })
+					.style("fill", function(d) { return d.color; })
+					.style("stroke", function(d) { return d.stroke; });
+					
+
+									
+
+				force.start();
+
+				}
+		 
+			} 
+			nodes.pop(d)
+		});
+
+			// Time to go to next activity
+			if (curr_nodes[i].next_move_time == curr_minute) {
+				//console.log(curr_nodes[i].sched)
+				curr_nodes[i].stroke = "transparent";
+				if (curr_nodes[i].moves == curr_nodes[i].sched.length-1) {
+					curr_nodes[i].moves = 0;
+				} else {
+					curr_nodes[i].moves += 1;
+				}
+			
+				// Subtract from current activity count
+                // act_counts[curr_node.act] -= 1;
+                groups[curr_nodes[i].act].cnt -= 1;
+				
+//				console.log(curr_nodes)
+			
+				// Move on to next activity
+			try{
+//				console.log(curr_nodes[i].sched)
+//				console.log(curr_nodes[i].act)
+//				console.log(curr_nodes[i].moves)
+//				console.log(curr_nodes[i].next_move_time)
+				
+				if (curr_nodes[i].sched[ curr_nodes[i].moves ].act != "Other")
+				{
+				
+					curr_nodes[i].act = curr_nodes[i].sched[ curr_nodes[i].moves ].act;
+//					console.log(curr_nodes[i].act)
+					curr_nodes[i].moves += 1;
+				}
+				// Add to new activity count
+                // act_counts[curr_node.act] += 1;
+                groups[curr_nodes[i].act].cnt += 1;
+                // nodes[i].moves = nodes[i].moves;
+			
+				curr_nodes[i].next_move_time += parseInt(curr_nodes[i].sched[ curr_nodes[i].moves ].duration);
+//				console.log(curr_nodes[i].next_move_time)
+				}
+				catch (err)
+				{
+					//curr_nodes[i].act = "Left";
+					//groups[curr_nodes[i].act].cnt += 1;
+					curr_nodes[i].next_move_time = curr_minute + 30;
+					curr_nodes[i].stroke = "black";
+					curr_nodes[i].leave = 1;
+//					console.log("error")
+				}
+			
+			if (curr_nodes[i].leave == 1)
+			{
+				groups[curr_nodes[i].act].cnt -= 1;
+//				console.log("LEAVE")
+				curr_nodes[i].act = "Left";
+				groups[curr_nodes[i].act].cnt += 1;
+				curr_nodes[i].next_move_time = curr_minute - 10;
+			}
+
+//				console.log(groups["Left"].cnt);
+			}
+
+		});
+
+		force.resume();
+		curr_minute += 1;
+
+		// Update percentages
+        cntlabel.selectAll("text.cnt")
+            .text(d => groups[d].cnt);
+
+	
+		// Update time
+  //      var true_minute = curr_minute % 1440;
+
+		d_t = minutesToTime(curr_minute)
+
+		d3.select("#current_date").text(d_t[0]);
+
+        d3.select("#current_time").text(" " + d_t[1] + ":" + d_t[2] + ":" + d_t[3] + d_t[4]);
+		
+        
+		if (USER_SPEED != "pause") {
+		    simtimer = setTimeout(timer, speeds[USER_SPEED]);
+		}
+	}
+    // setTimeout(timer, speeds[USER_SPEED]);
+	timer();		
+//	console.log(curr_nodes);
+	function tick(e) {
+	
+//	console.log(curr_nodes);
+	  var k = 0.03 * e.alpha;
+  
+	  // Push nodes toward their designated focus.
+	  curr_nodes.forEach(function(o, i) {
+		var curr_act = o.act;
+        
+        o.y += (groups[curr_act].y - o.y) * k;
+        o.x += (groups[curr_act].x-width*.01 - o.x) * k ;
+
+        
+	  });
+
+	  circle
+	  	  .each(collide(.5))
+            // .style("fill", function(d) { return d.color; })
+	      .attr("cx", function(d) { return d.x; })
+	      .attr("cy", function(d) { return d.y; })
+		  .style("stroke", function(d) { return d.stroke; });
+		  
+
+	}
+	
+		// Resolve collisions between nodes.
+	function collide(alpha) {
+	  var quadtree = d3.geom.quadtree(curr_nodes);
+	  return function(d) {
+	    var r = d.radius + maxRadius + padding,
+	        nx1 = d.x - r,
+	        nx2 = d.x + r,
+	        ny1 = d.y - r,
+	        ny2 = d.y + r;
+	    quadtree.visit(function(quad, x1, y1, x2, y2) {
+	      if (quad.point && (quad.point !== d)) {
+	        var x = d.x - quad.point.x,
+	            y = d.y - quad.point.y,
+	            l = Math.sqrt(x * x + y * y),
+	            r = d.radius + quad.point.radius + (d.act !== quad.point.act) * padding;
+	        if (l < r) {
+	          l = (l - r) / l * alpha;
+	          d.x -= x *= l;
+	          d.y -= y *= l;
+	          quad.point.x += x;
+	          quad.point.y += y;
+	        }
+	      }
+	      return x1 > nx2 || x2 < nx1 || y1 > ny2 || y2 < ny1;
+	    });
+	  };
+	}
+	
+		// Speed toggle
+	d3.selectAll(".togglebutton")
+      .on("click", function() {
+        if (d3.select(this).attr("data-val") == "pause") {
+            d3.select(".pause").classed("current", true);
+			d3.select(".medium").classed("current", false);
+            d3.select(".fast").classed("current", false);
+        } else if (d3.select(this).attr("data-val") == "medium") {
+            d3.select(".pause").classed("current", false);
+			d3.select(".medium").classed("current", true);
+            d3.select(".fast").classed("current", false);
+        } else {
+            d3.select(".pause").classed("current", false);
+			d3.select(".medium").classed("current", false);
+			d3.select(".fast").classed("current", true);
+        }
+		
+        force.resume();
+        clearTimeout(simtimer);
+		USER_SPEED = d3.select(this).attr("data-val");
+        
+        if (USER_SPEED != "pause") timer();
+    });
+}); // @end d3.tsv
+
+
+function get_currDateTime (d) {	
+	
+	curr_time_str = d.split(" ")[1] + ":00" ;
+	
+	if (curr_time_str.length != 8)
+	{
+		curr_time_str = "0" + curr_time_str;
+	}
+	curr_time_arr = curr_time_str.split(":");
+//	console.log(curr_time_arr)
+	hh = curr_time_arr[0];
+	mm = curr_time_arr[1];
+	ss = curr_time_arr[2];
+	curr_date_str = d.split(" ")[0];
+	curr_date_arr = curr_date_str.split("/");
+	dd = parseInt(curr_date_arr[1]);
+	MM = parseInt(curr_date_arr[0]);
+	yyyy = parseInt(curr_date_arr[2]);
+//	console.log(curr_time_str)
+	
+	if (hh == "00")
+	{
+		hh = "12";
+	}
+//	console.log(hh,mm,ss)
+	
+	return [dd, MM, yyyy, hh, mm, ss];
+
+}
+	
+// Minutes to time of day. Data is minutes from 4am.
+function minutesToTime(s) {
+//	console.log(s)
+	d = curr_date;
+
+//	var seconds = s % 1440;
+	var seconds = s;
+//	var minutes = Math.floor(seconds / 60)
+
+//	var hh = Math.floor(seconds/60 / 60);
+	var ampm;
+	
+	var hh = Math.floor(s/3600);
+//	console.log(hh)
+	var mm = Math.floor(s/60) - (hh * 60);
+//	console.log(mm)
+	
+	if (hh > 12) {
+		hh = hh - 12;
+		ampm = "pm";
+	} else if (hh == 12) {
+		ampm = "pm";
+	} else if (hh == 0) {
+		hh = 12;
+		ampm = "am";
+	} else {
+		ampm = "am";
+	}
+	
+	var ss = seconds % 60;
+	if (ss<10) {
+		ss = "0" + ss;
+	}
+	
+	if (hh<10) {
+		hh = "0" + hh;
+	}
+	
+//	var mm = minutes % 60;
+	
+	
+	if (mm < 10) {
+		mm = "0" + mm;
+	}
+	
+
+	t = " " + hh + ":" + mm + ":" + ss + ampm;
+
+	return [d, hh, mm, ss, ampm];
+}
+
+// For SVG text-wrapping
+function wrap(text, width) {
+  text.each(function() {
+    var text = d3.select(this),
+        words = text.text().split(/\s+/).reverse(),
+        word,
+        line = [],
+        lineNumber = 0,
+        lineHeight = 1.1, // ems
+        x = text.attr("x"),
+        y = text.attr("y"),
+        dy = parseFloat(text.attr("dy")),
+        tspan = text.text(null).append("tspan").attr("x", x).attr("y", y).attr("dy", dy + "em");
+    while (word = words.pop()) {
+      line.push(word);
+      tspan.text(line.join(" "));
+      if (tspan.node().getComputedTextLength() > width) {
+        line.pop();
+        tspan.text(line.join(" "));
+        line = [word];
+        tspan = text.append("tspan").attr("x", x).attr("y", y).attr("dy", ++lineNumber * lineHeight + dy + "em").text(word);
+      }
+    }
+  });
+}
+
+
+</script>    
